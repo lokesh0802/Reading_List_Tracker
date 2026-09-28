@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchBooks, updateBookStatus } from "./api.js";
+import { createBook, fetchBooks, updateBookStatus } from "./api.js";
 import FilterBar from "./components/FilterBar.jsx";
 import BookList from "./components/BookList.jsx";
 
@@ -14,6 +14,10 @@ export default function App() {
   // rows never interfere with each other's pending flag or rollback.
   const [pendingIds, setPendingIds] = useState(() => new Set());
   const [rowErrors, setRowErrors] = useState({});
+  const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState(null);
 
   useEffect(() => {
     loadBooks();
@@ -29,6 +33,22 @@ export default function App() {
       setLoadError(err.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleCreate(event) {
+    event.preventDefault();
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const book = await createBook({ title, author });
+      setBooks((current) => [...current, book]);
+      setTitle("");
+      setAuthor("");
+    } catch (err) {
+      setCreateError(err.message);
+    } finally {
+      setCreating(false);
     }
   }
 
@@ -81,6 +101,29 @@ export default function App() {
       <header>
         <h1>Reading List Tracker</h1>
       </header>
+
+      <form className="book-form" onSubmit={handleCreate}>
+        <input
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          placeholder="Title"
+          required
+        />
+        <input
+          value={author}
+          onChange={(event) => setAuthor(event.target.value)}
+          placeholder="Author"
+          required
+        />
+        <button type="submit" disabled={creating}>
+          {creating ? "Adding..." : "Add book"}
+        </button>
+      </form>
+      {createError && (
+        <div className="banner error" role="alert">
+          {createError}
+        </div>
+      )}
 
       <FilterBar filters={FILTERS} active={filter} onChange={setFilter} />
 

@@ -10,7 +10,7 @@ services:
     branch: main
     dockerfilePath: ./deployment/Dockerfile
     dockerContext: .
-    healthCheckPath: /docs
+    healthCheckPath: /health
     autoDeploy: true
     envVars:
       # Comma-separated list of allowed origins for CORS, e.g. the Vercel

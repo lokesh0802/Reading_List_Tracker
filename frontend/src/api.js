@@ -2,10 +2,8 @@
 //
 // Backend contract (see backend/app/routes.py, backend/app/models.py):
 //   GET   /books          -> [{ id, title, author, status }]
+//   POST  /books          -> body { title, author, status? }, returns created book
 //   PATCH /books/:id      -> body { status }, returns updated book
-//     NOTE: the backend does not implement this route yet (only POST/GET
-//     exist). Calls will fail with 404/405 until it's added; the UI
-//     surfaces that as an error banner and rolls back optimistically.
 //
 // Valid book `status` values: "to-do" | "reading" | "done"
 // Base URL is configurable via VITE_API_URL so this can point at any
@@ -13,7 +11,7 @@
 // requests go to same-origin /books, which the dev server proxies to
 // the backend (see vite.config.js) — the backend router has no prefix.
 
-const BASE_URL = import.meta.env.VITE_API_URL || "";
+const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 async function request(path, options = {}) {
   let response;
@@ -49,6 +47,13 @@ async function request(path, options = {}) {
 
 export function fetchBooks() {
   return request("/books");
+}
+
+export function createBook({ title, author, status = "to-do" }) {
+  return request("/books", {
+    method: "POST",
+    body: JSON.stringify({ title, author, status }),
+  });
 }
 
 export function updateBookStatus(id, status) {

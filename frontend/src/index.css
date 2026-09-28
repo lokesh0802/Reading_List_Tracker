@@ -20,6 +20,36 @@ header h1 {
   margin-bottom: 1rem;
 }
 
+.book-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.book-form input {
+  flex: 1 1 160px;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.book-form button {
+  padding: 0.5rem 0.9rem;
+  border: none;
+  border-radius: 6px;
+  background: #1a1a1a;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.book-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .filter-bar {
   display: flex;
   gap: 0.5rem;
