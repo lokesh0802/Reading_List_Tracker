@@ -3,14 +3,17 @@ import { fetchBooks, updateBookStatus } from "./api.js";
 import FilterBar from "./components/FilterBar.jsx";
 import BookList from "./components/BookList.jsx";
 
-const FILTERS = ["all", "to_read", "reading", "done"];
+const FILTERS = ["all", "to-do", "reading", "done"];
 
 export default function App() {
   const [books, setBooks] = useState([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [updatingId, setUpdatingId] = useState(null);
+  const [loadError, setLoadError] = useState(null);
+  // Per-book state, keyed by book id, so concurrent updates to different
+  // rows never interfere with each other's pending flag or rollback.
+  const [pendingIds, setPendingIds] = useState(() => new Set());
+  const [rowErrors, setRowErrors] = useState({});
 
   useEffect(() => {
     loadBooks();
@@ -18,33 +21,53 @@ export default function App() {
 
   async function loadBooks() {
     setLoading(true);
-    setError(null);
+    setLoadError(null);
     try {
       const data = await fetchBooks();
       setBooks(data);
     } catch (err) {
-      setError(err.message);
+      setLoadError(err.message);
     } finally {
       setLoading(false);
     }
   }
 
   async function handleStatusChange(id, status) {
-    const previous = books;
-    setUpdatingId(id);
+    const previousBook = books.find((book) => book.id === id);
+    if (!previousBook) return;
+    const previousStatus = previousBook.status;
+
+    setPendingIds((current) => new Set(current).add(id));
+    setRowErrors((current) => {
+      if (!(id in current)) return current;
+      const { [id]: _removed, ...rest } = current;
+      return rest;
+    });
     setBooks((current) =>
       current.map((book) => (book.id === id ? { ...book, status } : book))
     );
+
     try {
       const updated = await updateBookStatus(id, status);
       setBooks((current) =>
         current.map((book) => (book.id === id ? updated : book))
       );
     } catch (err) {
-      setBooks(previous);
-      setError(err.message);
+      // Roll back only this book's status, not the whole list snapshot,
+      // so a concurrent update to another row that already succeeded
+      // is never clobbered.
+      setBooks((current) =>
+        current.map((book) =>
+          book.id === id ? { ...book, status: previousStatus } : book
+        )
+      );
+      setRowErrors((current) => ({ ...current, [id]: err.message }));
     } finally {
-      setUpdatingId(null);
+      setPendingIds((current) => {
+        const next = new Set(current);
+        next.delete(id);
+        return next;
+      });
     }
   }
 
@@ -61,9 +84,9 @@ export default function App() {
 
       <FilterBar filters={FILTERS} active={filter} onChange={setFilter} />
 
-      {error && (
+      {loadError && (
         <div className="banner error" role="alert">
-          {error}
+          {loadError}
           <button onClick={loadBooks}>Retry</button>
         </div>
       )}
@@ -75,7 +98,8 @@ export default function App() {
       ) : (
         <BookList
           books={filteredBooks}
-          updatingId={updatingId}
+          pendingIds={pendingIds}
+          rowErrors={rowErrors}
           onStatusChange={handleStatusChange}
         />
       )}

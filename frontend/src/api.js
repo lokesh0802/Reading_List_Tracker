@@ -1,14 +1,19 @@
 // API layer for the Reading List Tracker frontend.
 //
-// Assumed backend contract (REST, JSON):
-//   GET   /api/books            -> [{ id, title, author, status, ... }]
-//   PATCH /api/books/:id        -> body { status }, returns updated book
+// Backend contract (see backend/app/routes.py, backend/app/models.py):
+//   GET   /books          -> [{ id, title, author, status }]
+//   PATCH /books/:id      -> body { status }, returns updated book
+//     NOTE: the backend does not implement this route yet (only POST/GET
+//     exist). Calls will fail with 404/405 until it's added; the UI
+//     surfaces that as an error banner and rolls back optimistically.
 //
-// Valid book `status` values: "to_read" | "reading" | "done"
+// Valid book `status` values: "to-do" | "reading" | "done"
 // Base URL is configurable via VITE_API_URL so this can point at any
-// backend deployment without code changes.
+// backend deployment without code changes. Left empty by default so
+// requests go to same-origin /books, which the dev server proxies to
+// the backend (see vite.config.js) — the backend router has no prefix.
 
-const BASE_URL = import.meta.env.VITE_API_URL || "/api";
+const BASE_URL = import.meta.env.VITE_API_URL || "";
 
 async function request(path, options = {}) {
   let response;
