@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 
-from .models import Book, BookCreate, Status
+from .models import Book, BookCreate, BookStatusUpdate, Status
 
 router = APIRouter()
 
@@ -41,3 +41,13 @@ def get_book(book_id: int) -> Book:
     if book is None:
         raise HTTPException(status_code=404, detail="Book not found")
     return book
+
+
+@router.patch("/books/{book_id}", response_model=Book)
+def update_book_status(book_id: int, payload: BookStatusUpdate) -> Book:
+    book = _books.get(book_id)
+    if book is None:
+        raise HTTPException(status_code=404, detail="Book not found")
+    updated = book.model_copy(update={"status": payload.status})
+    _books[book_id] = updated
+    return updated

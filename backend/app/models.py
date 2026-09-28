@@ -27,3 +27,7 @@ class Book(BaseModel):
     title: str
     author: str
     status: Status
+
+
+class BookStatusUpdate(BaseModel):
+    status: Status
