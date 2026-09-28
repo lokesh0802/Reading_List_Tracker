@@ -1,0 +1,22 @@
+# Render Blueprint for the Reading List Tracker FastAPI backend.
+# Deploy: connect this repo in the Render dashboard and choose
+# "New Blueprint Instance", or run `render blueprint launch` from the CLI.
+services:
+  - type: web
+    name: reading-list-tracker-backend
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./deployment/Dockerfile
+    dockerContext: .
+    healthCheckPath: /docs
+    autoDeploy: true
+    envVars:
+      # Comma-separated list of allowed origins for CORS, e.g. the Vercel
+      # frontend URL(s). Set this once the frontend is deployed. Only takes
+      # effect if/when CORS middleware is added to the FastAPI app.
+      - key: CORS_ORIGINS
+        sync: false
+      - key: PYTHONUNBUFFERED
+        value: "1"
