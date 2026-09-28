@@ -11,6 +11,11 @@ _books: dict[int, Book] = {}
 _id_counter = count(1)
 
 
+@router.get("/health")
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
 @router.post("/books", response_model=Book, status_code=201)
 def create_book(payload: BookCreate) -> Book:
     book_id = next(_id_counter)
