@@ -60,16 +60,19 @@ Current contract:
 - `GET  /books` → `[{ id, title, author, status }]`
 - `PATCH /books/:id` with body `{ status }` → updated book object
 
-**Known backend gap (not fixable from this frontend-only worktree):** the
-backend implements only `POST /books`, `GET /books`, `GET /books/count`, and
-`GET /books/{id}` — there is no `PATCH /books/{id}` route yet. Confirmed live:
-`curl -X PATCH http://localhost:8000/books/1 -d '{"status":"reading"}'` →
-`405 Method Not Allowed`. The frontend still calls `PATCH /books/:id` (the
-correct target contract), and `api.js`'s error handling means a failed
-status change surfaces as a readable error banner and rolls back the
-optimistic UI update rather than breaking — but status changes will not
-persist until the backend adds this endpoint. Flagging for the backend
-agent rather than adding it myself, since that's out of scope here.
+**Update — backend gap closed:** the backend agent has since added
+`PATCH /books/{book_id}` (`backend/app/routes.py`, using the new
+`BookStatusUpdate` model in `backend/app/models.py`). Re-verified live
+against the real backend through the frontend's dev proxy, no frontend
+code changes were required — `api.js` was already targeting the correct
+contract:
+
+- `PATCH /books/1` with `{"status":"reading"}` → `200`, updated book body.
+- `PATCH /books/9999` (unknown id) → `404 {"detail":"Book not found"}`.
+- `PATCH /books/1` with `{"status":"bogus"}` → `400`, FastAPI validation
+  error body — handled by `api.js`'s `request()` the same as any other
+  non-2xx response, surfaced as the per-row error message added in the
+  concurrency fix above.
 
 ## Verified
 
@@ -80,8 +83,10 @@ agent rather than adding it myself, since that's out of scope here.
   proxying to it:
   - `GET /books` through the dev proxy → returns seeded book correctly
     (path-prefix fix confirmed working).
-  - `PATCH /books/1` through the dev proxy → reaches the backend (proxy
-    fix confirmed) but backend returns `405` (missing route, see above).
+  - `PATCH /books/1` (valid status), `PATCH /books/9999` (unknown id),
+    `PATCH /books/1` with an invalid status → 200 / 404 / 400 respectively,
+    all through the dev proxy against the real backend. No frontend code
+    changes were needed for this pass.
 
 ## Files added
 
