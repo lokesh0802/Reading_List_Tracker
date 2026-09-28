@@ -64,6 +64,15 @@ Added `test_cors_allows_configured_origin`, asserting `GET /books` with
 `Access-Control-Allow-Origin` (using the default, since the test suite runs
 without `CORS_ORIGINS` set).
 
+Follow-up: added `test_cors_allows_frontend_origin`, covering both a plain
+`GET /books` and an `OPTIONS /books` preflight (with
+`Access-Control-Request-Method`/`-Headers`), asserting
+`Access-Control-Allow-Origin` on both.
+
+Re-confirmed `PATCH /books/{book_id}` (added in Round 3) already matches:
+`BookStatusUpdate` body, 404 on unknown id, 400 on invalid status, 200 with
+updated `Book` — no changes needed there.
+
 ## Round 5 — GET /health
 
 Added `GET /health` in `app/routes.py` returning `{"status": "ok"}` with 200,
