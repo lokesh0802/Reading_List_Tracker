@@ -9,14 +9,33 @@ A React app (Vite) in `frontend/` for the Reading List Tracker:
 - **Filter**: `components/FilterBar.jsx` provides All / To Read / Reading / Done
   filter buttons; filtering happens client-side over the loaded book list.
 - **Change book status**: each book card has a status `<select>` that calls
-  `updateBookStatus`, applies an optimistic UI update, and rolls back with an
-  error banner if the request fails.
+  `updateBookStatus`, applies an optimistic UI update, and rolls back with a
+  per-row error message if the request fails.
 - **API layer**: `src/api.js` centralizes all backend calls (`fetchBooks`,
   `updateBookStatus`) behind a shared `request()` helper that handles JSON
   parsing and throws readable errors on non-2xx responses or network failures.
-- **Loading / success / error handling**: `App.jsx` tracks `loading`, `error`,
-  and per-row `updatingId` state; shows a loading message, an empty-filter
-  message, and a dismissible/retryable error banner.
+- **Loading / success / error handling**: `App.jsx` tracks `loading`,
+  `loadError`, and per-book `pendingIds`/`rowErrors` state; shows a loading
+  message, an empty-filter message, a retryable error banner for the initial
+  fetch, and a per-row error message for a failed status update.
+
+## Concurrency fix: per-book pending/error state
+
+Originally `App.jsx` tracked a single `updatingId` and rolled a failed update
+back by restoring a whole-list snapshot captured before the optimistic
+update. With more than one row updating concurrently, that snapshot could be
+stale by the time a later failure rolled it back — overwriting a different
+row's already-successful update, and `updatingId` being a scalar meant only
+one row could ever show as pending at a time.
+
+Fixed: `pendingIds` is now a `Set<id>` (each row's `disabled` state is
+`pendingIds.has(book.id)`, independent of any other row), and on failure
+only the affected book's `status` field is reset to the value captured
+right before that specific optimistic update — not the whole list. Errors
+are tracked per row in `rowErrors: { [id]: message }` and rendered under the
+affected book, cleared when that book's next update starts. Two rows
+updating at once (one succeeding, one failing) can no longer interfere with
+each other.
 
 ## API contract (aligned to actual backend)
 
