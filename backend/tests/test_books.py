@@ -97,3 +97,29 @@ def test_malformed_json_returns_400(client):
         headers={"Content-Type": "application/json"},
     )
     assert response.status_code == 400
+
+
+def test_status_filtering_works(client):
+    client.post("/books", json={"title": "Dune", "author": "Frank Herbert", "status": "done"})
+    client.post("/books", json={"title": "1984", "author": "George Orwell", "status": "reading"})
+    client.post("/books", json={"title": "Foundation", "author": "Isaac Asimov", "status": "done"})
+
+    response = client.get("/books", params={"status": "done"})
+    assert response.status_code == 200
+    books = response.json()
+    assert len(books) == 2
+    assert {book["title"] for book in books} == {"Dune", "Foundation"}
+    assert all(book["status"] == "done" for book in books)
+
+
+def test_count_endpoint_works(client):
+    client.post("/books", json={"title": "Dune", "author": "Frank Herbert", "status": "done"})
+    client.post("/books", json={"title": "1984", "author": "George Orwell", "status": "reading"})
+
+    response = client.get("/books/count")
+    assert response.status_code == 200
+    assert response.json()["count"] == 2
+
+    filtered = client.get("/books/count", params={"status": "done"})
+    assert filtered.status_code == 200
+    assert filtered.json()["count"] == 1
