@@ -3,7 +3,7 @@ import { fetchBooks, updateBookStatus } from "./api.js";
 import FilterBar from "./components/FilterBar.jsx";
 import BookList from "./components/BookList.jsx";
 
-const FILTERS = ["all", "to_read", "reading", "done"];
+const FILTERS = ["all", "to-do", "reading", "done"];
 
 export default function App() {
   const [books, setBooks] = useState([]);

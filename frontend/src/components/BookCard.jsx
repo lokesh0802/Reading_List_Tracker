@@ -1,5 +1,5 @@
 const STATUS_OPTIONS = [
-  { value: "to_read", label: "To Read" },
+  { value: "to-do", label: "To Read" },
   { value: "reading", label: "Reading" },
   { value: "done", label: "Done" },
 ];

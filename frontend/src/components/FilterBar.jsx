@@ -1,6 +1,6 @@
 const LABELS = {
   all: "All",
-  to_read: "To Read",
+  "to-do": "To Read",
   reading: "Reading",
   done: "Done",
 };

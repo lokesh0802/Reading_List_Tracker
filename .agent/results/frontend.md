@@ -18,30 +18,51 @@ A React app (Vite) in `frontend/` for the Reading List Tracker:
   and per-row `updatingId` state; shows a loading message, an empty-filter
   message, and a dismissible/retryable error banner.
 
-## Assumed API contract
+## API contract (aligned to actual backend)
 
-No backend code existed in this worktree (`backend/` only contained an empty
-`__init__.py`), so the frontend was built against an assumed REST contract:
+Originally built against an assumed `/api`-prefixed contract before backend
+code existed in this worktree. After the backend agent's implementation
+landed (`backend/app/routes.py`, `backend/app/models.py`), a review caught
+two mismatches, both now fixed on the frontend side:
 
-- `GET  /api/books` → `[{ id, title, author, status }]`
-- `PATCH /api/books/:id` with body `{ status }` → updated book object
-- `status` ∈ `"to_read" | "reading" | "done"`
+- **Path prefix**: backend mounts its router with no prefix at all
+  (`app.include_router(router)` in `backend/app/main.py`) — routes are
+  `/books`, not `/api/books`. `src/api.js` now defaults `VITE_API_URL` to
+  `""` and calls `/books` directly; `vite.config.js`'s dev proxy key changed
+  from `/api` to `/books` to match.
+- **Status enum values**: backend's `Status` enum
+  (`backend/app/models.py`) is `"to-do" | "reading" | "done"`, not
+  `"to_read"`. Updated `App.jsx` (`FILTERS`), `BookCard.jsx`
+  (`STATUS_OPTIONS`), and `FilterBar.jsx` (`LABELS`) to use `"to-do"` while
+  keeping the "To Read" display label.
 
-Base URL is configurable via `VITE_API_URL` (see `frontend/.env.example`);
-defaults to `/api`, which the Vite dev server proxies to
-`http://localhost:8000` (see `frontend/vite.config.js`). If the real backend
-uses different field names, endpoints, or status values, only `src/api.js`
-(and the `status` literals in `App.jsx`/`BookCard.jsx`) need to change.
+Current contract:
+
+- `GET  /books` → `[{ id, title, author, status }]`
+- `PATCH /books/:id` with body `{ status }` → updated book object
+
+**Known backend gap (not fixable from this frontend-only worktree):** the
+backend implements only `POST /books`, `GET /books`, `GET /books/count`, and
+`GET /books/{id}` — there is no `PATCH /books/{id}` route yet. Confirmed live:
+`curl -X PATCH http://localhost:8000/books/1 -d '{"status":"reading"}'` →
+`405 Method Not Allowed`. The frontend still calls `PATCH /books/:id` (the
+correct target contract), and `api.js`'s error handling means a failed
+status change surfaces as a readable error banner and rolls back the
+optimistic UI update rather than breaking — but status changes will not
+persist until the backend adds this endpoint. Flagging for the backend
+agent rather than adding it myself, since that's out of scope here.
 
 ## Verified
 
 - `npm install` — succeeds (62 packages).
 - `npm run build` — succeeds, produces `dist/`.
-- `npm run dev` — serves the app; manually curled the dev server and confirmed
-  `index.html` and `src/api.js` load correctly.
-- No backend was running in this environment, so live API calls were not
-  exercised end-to-end; the app was verified to render its loading state and
-  would show its error banner (with retry) if `fetchBooks()` rejects.
+- End-to-end smoke test against the real backend (`backend-agent` worktree,
+  `uvicorn app.main:app --port 8000`) with the frontend dev server
+  proxying to it:
+  - `GET /books` through the dev proxy → returns seeded book correctly
+    (path-prefix fix confirmed working).
+  - `PATCH /books/1` through the dev proxy → reaches the backend (proxy
+    fix confirmed) but backend returns `405` (missing route, see above).
 
 ## Files added
 
