@@ -35,4 +35,24 @@ handled in `app/validation.py` and remapped from the default 422 to 400.
 
 `cd backend && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && python -m pytest -q`
 
-Result: 11 passed.
+Result: 14 passed.
+
+## Review fixes (round 2)
+
+- **Status enum contract**: backend's canonical enum is `to-do` / `reading` / `done`
+  (`app/models.py`). Checked the frontend worktree's actual source
+  (`App.jsx`, `BookCard.jsx`) and it already uses the same `to-do` values —
+  the `to_read` mismatch only existed in a stale note in the frontend's own
+  `.agent/results/frontend.md`, not in its code, so no cross-agent code change
+  was needed. The contract is shared via FastAPI's auto-generated OpenAPI
+  schema (`/openapi.json` → `components.schemas.Status.enum`), which any
+  consumer (frontend, tests) should read instead of hardcoding values.
+- **500 on blank title/author**: `app/validation.py`'s exception handler was
+  passing `exc.errors()` straight into `JSONResponse`, but Pydantic's error
+  dicts can carry a `ctx` key containing the raw `ValueError` instance our
+  `not_blank` validator raises — `json.dumps` can't serialize that, so the
+  handler itself raised and FastAPI returned a 500. Fixed by running the
+  errors through `jsonable_encoder(..., exclude={"ctx"})` before building the
+  response. Added `test_whitespace_only_title_returns_400`,
+  `test_whitespace_only_author_returns_400`, and
+  `test_empty_string_title_returns_400` to cover it.
