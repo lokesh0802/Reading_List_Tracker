@@ -185,3 +185,28 @@ def test_patch_invalid_status_returns_400(client):
     book_id = created.json()["id"]
     response = client.patch(f"/books/{book_id}", json={"status": "archived"})
     assert response.status_code == 400
+
+
+def test_cors_allows_configured_origin(client):
+    response = client.get("/books", headers={"Origin": "http://localhost:5173"})
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
+def test_cors_allows_frontend_origin(client):
+    origin = "http://localhost:5173"
+
+    get_response = client.get("/books", headers={"Origin": origin})
+    assert get_response.status_code == 200
+    assert get_response.headers["access-control-allow-origin"] == origin
+
+    preflight_response = client.options(
+        "/books",
+        headers={
+            "Origin": origin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "Content-Type",
+        },
+    )
+    assert preflight_response.status_code == 200
+    assert preflight_response.headers["access-control-allow-origin"] == origin
