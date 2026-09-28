@@ -1,0 +1,27 @@
+const STATUS_OPTIONS = [
+  { value: "to_read", label: "To Read" },
+  { value: "reading", label: "Reading" },
+  { value: "done", label: "Done" },
+];
+
+export default function BookCard({ book, updating, onStatusChange }) {
+  return (
+    <li className="book-card">
+      <div className="book-info">
+        <h2>{book.title}</h2>
+        {book.author && <p className="author">by {book.author}</p>}
+      </div>
+      <select
+        value={book.status}
+        disabled={updating}
+        onChange={(event) => onStatusChange(book.id, event.target.value)}
+      >
+        {STATUS_OPTIONS.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </li>
+  );
+}
