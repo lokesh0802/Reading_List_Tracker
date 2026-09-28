@@ -1,0 +1,30 @@
+{
+    "project": "Reading List AI Demo",
+    "agents": [
+        {
+            "name": "backend-agent",
+            "task": "Build FastAPI backend",
+            "worktree": "../backend-agent"
+        },
+        {
+            "name": "frontend-agent",
+            "task": "Build React frontend",
+            "worktree": "../frontend-agent"
+        },
+        {
+            "name": "testing-agent",
+            "task": "Create pytest tests",
+            "worktree": "../testing-agent"
+        },
+        {
+            "name": "deployment-agent",
+            "task": "Prepare deployment",
+            "worktree": "../deployment-agent"
+        },
+        {
+            "name": "qa-agent",
+            "task": "Review project",
+            "worktree": "../qa-agent"
+        }
+    ]
+}
