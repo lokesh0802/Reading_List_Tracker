@@ -96,3 +96,21 @@ def test_malformed_json_returns_400(client):
         headers={"Content-Type": "application/json"},
     )
     assert response.status_code == 400
+
+
+def test_whitespace_only_title_returns_400(client):
+    response = client.post("/books", json={"title": "   ", "author": "Frank Herbert"})
+    assert response.status_code == 400
+    assert response.json()["detail"]
+
+
+def test_whitespace_only_author_returns_400(client):
+    response = client.post("/books", json={"title": "Dune", "author": "   "})
+    assert response.status_code == 400
+    assert response.json()["detail"]
+
+
+def test_empty_string_title_returns_400(client):
+    response = client.post("/books", json={"title": "", "author": "Frank Herbert"})
+    assert response.status_code == 400
+    assert response.json()["detail"]
