@@ -26,6 +26,16 @@ def test_create_book(client):
     assert "id" in body
 
 
+def test_create_book_trims_whitespace(client):
+    response = client.post(
+        "/books", json={"title": "  Dune  ", "author": "  Frank Herbert  "}
+    )
+    assert response.status_code == 201
+    body = response.json()
+    assert body["title"] == "Dune"
+    assert body["author"] == "Frank Herbert"
+
+
 def test_create_book_with_status(client):
     response = client.post(
         "/books",

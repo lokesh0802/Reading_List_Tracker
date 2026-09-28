@@ -38,6 +38,13 @@ handled in `app/validation.py` and remapped from the default 422 to 400.
 
 Result: 17 passed.
 
+## Round 4 — trim whitespace on create
+
+`BookCreate.not_blank` validated that `title`/`author` weren't blank but
+returned the raw (untrimmed) value, so `POST /books` with `"  Dune  "`
+stored the padded string as-is. Changed the validator in `app/models.py` to
+return `value.strip()`. Added `test_create_book_trims_whitespace`.
+
 ## Round 3 — PATCH /books/{book_id}
 
 The frontend (`frontend/src/api.js`) calls `PATCH /books/:id` with body
