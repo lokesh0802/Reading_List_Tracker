@@ -19,11 +19,15 @@ class BookCreate(BaseModel):
     def not_blank(cls, value: str) -> str:
         if not isinstance(value, str) or not value.strip():
             raise ValueError("must be a non-empty string")
-        return value
+        return value.strip()
 
 
 class Book(BaseModel):
     id: int
     title: str
     author: str
+    status: Status
+
+
+class BookStatusUpdate(BaseModel):
     status: Status

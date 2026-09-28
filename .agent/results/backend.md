@@ -20,6 +20,7 @@ FastAPI backend under `backend/`:
 - `GET /books?status={status}` — list books filtered by status.
 - `GET /books/count` — count of books (optionally filtered by `?status=`).
 - `GET /books/{id}` — fetch a single book; 404 if unknown id.
+- `PATCH /books/{id}` — update a book's `status`; 404 if unknown id, 400 on invalid status.
 
 ## Validation (400)
 
@@ -35,7 +36,41 @@ handled in `app/validation.py` and remapped from the default 422 to 400.
 
 `cd backend && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && python -m pytest -q`
 
-Result: 14 passed.
+Result: 17 passed.
+
+## Round 5 — GET /health
+
+Added `GET /health` in `app/routes.py` returning `{"status": "ok"}` with 200,
+for use as a deployment health check. Added `test_health_returns_ok`.
+
+Not done (out of backend scope): updating `deployment/render.yaml`'s
+`healthCheckPath` from `/docs` to `/health` — that file isn't part of the
+`backend/` app and belongs to the deployment agent's worktree
+(`../deployment-agent`), so it wasn't touched here.
+
+## Round 4 — trim whitespace on create
+
+`BookCreate.not_blank` validated that `title`/`author` weren't blank but
+returned the raw (untrimmed) value, so `POST /books` with `"  Dune  "`
+stored the padded string as-is. Changed the validator in `app/models.py` to
+return `value.strip()`. Added `test_create_book_trims_whitespace`.
+
+## Round 3 — PATCH /books/{book_id}
+
+The frontend (`frontend/src/api.js`) calls `PATCH /books/:id` with body
+`{"status": ...}` to update a book's status, but the route didn't exist
+(405). Added:
+
+- `BookStatusUpdate` model in `app/models.py` (`status: Status`, required).
+- `PATCH /books/{book_id}` in `app/routes.py` — 404 if the id is unknown,
+  400 on an invalid status (via the existing validation handler, since an
+  out-of-enum value fails `Status` parsing the same way `POST /books` does),
+  200 with the updated `Book` on success. Uses `book.model_copy(update=...)`
+  to keep the in-memory store pattern.
+- Tests: `test_patch_status_success`, `test_patch_unknown_book_returns_404`,
+  `test_patch_invalid_status_returns_400`.
+
+Frontend was not touched (not in scope for this agent).
 
 ## Review fixes (round 2)
 
